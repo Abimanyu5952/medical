@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lavender Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue.js CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    html, body, #app, .dashboard-root {
+      height: 100%;
+      min-height: 100%;
+    }
+    /* Optional: smooth scroll */
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      background: transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #a78bfa; /* Tailwind purple-400 */
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body :class="darkMode ? 'bg-black text-white' : 'bg-purple-100 text-purple-900'" id="app">
+  <div class="dashboard-root flex flex-col h-screen">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 py-3 shadow z-20"
+            :class="darkMode ? 'bg-gray-900 text-white' : 'bg-purple-200 text-purple-900'">
+      <div class="flex items-center">
+        <button class="md:hidden mr-3" @click="sidebarOpen = !sidebarOpen">
+          <svg v-if="!sidebarOpen" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
+               viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round"
+               d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
+               viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round"
+               d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <span class="font-bold text-xl">Lavender Dashboard</span>
+      </div>
+      <button @click="toggleTheme"
+        class="p-2 rounded focus:outline-none"
+        :class="darkMode ? 'bg-gray-800 text-yellow-300' : 'bg-purple-300 text-purple-700'">
+        {{ darkMode ? '🌙' : '☀️' }}
+      </button>
+    </header>
+    <div class="flex flex-1 h-0">
+      <!-- Sidebar -->
+      <aside
+        class="fixed md:static inset-y-0 left-0 z-30 w-64 transform transition-transform duration-200 ease-in-out
+               md:translate-x-0 md:block flex-shrink-0"
+        :class="[
+          darkMode ? 'bg-gray-900 text-white' : 'bg-purple-200 text-purple-900',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'md:translate-x-0 md:block'
+        ]"
+        @click.away="sidebarOpen = false"
+        style="height: 100vh;"
+      >
+        <nav class="h-full flex flex-col py-6 px-4">
+          <a href="#" class="mb-4 font-semibold hover:underline">Dashboard</a>
+          <a href="#" class="mb-4 font-semibold hover:underline">Users</a>
+          <a href="#" class="mb-4 font-semibold hover:underline">Medical Data</a>
+          <a href="#" class="mb-4 font-semibold hover:underline">Settings</a>
+        </nav>
+      </aside>
+      <!-- Main Content: scrollable -->
+      <main class="flex-1 overflow-y-auto scrollbar-thin p-4 md:ml-4"
+            :class="darkMode ? 'bg-black text-white' : 'bg-purple-100 text-purple-900'" style="height: 100vh;">
+        <!-- Recent Purchases -->
+        <section class="mb-6">
+          <h2 class="text-lg font-bold mb-3">Recent Purchases</h2>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <li v-for="purchase in recentPurchases" :key="purchase.id"
+                class="p-3 rounded-md shadow-md text-sm"
+                :class="darkMode ? 'bg-gray-900 text-white' : 'bg-purple-50 text-purple-900'">
+              <div class="font-semibold">{{ purchase.medicine }}</div>
+              <div class="text-xs opacity-80">Qty: {{ purchase.qty }} | Cost: ₹{{ purchase.cost }}</div>
+              <div class="text-xs mt-1">Date: {{ purchase.date }}</div>
+            </li>
+          </ul>
+        </section>
+        <!-- Users List -->
+        <section class="mb-6">
+          <h2 class="text-lg font-bold mb-3">Users</h2>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <li v-for="user in users" :key="user.id"
+                class="p-3 rounded-md shadow-md text-sm"
+                :class="darkMode ? 'bg-gray-900 text-white' : 'bg-purple-50 text-purple-900'">
+              <div class="font-semibold">{{ user.name }}</div>
+              <div class="opacity-80">{{ user.email }}</div>
+              <div class="text-xs mt-1">Role: {{ user.role }}</div>
+            </li>
+          </ul>
+        </section>
+        <!-- Medical Data Table -->
+        <section class="mb-6">
+          <h2 class="text-lg font-bold mb-3">Medical Data</h2>
+          <div class="overflow-x-auto">
+            <table class="min-w-full rounded-md shadow-md text-sm"
+                   :class="darkMode ? 'bg-gray-900 text-white' : 'bg-purple-50 text-purple-900'">
+              <thead>
+                <tr>
+                  <th class="px-3 py-1.5 text-left">Patient</th>
+                  <th class="px-3 py-1.5 text-left">Age</th>
+                  <th class="px-3 py-1.5 text-left">Diagnosis</th>
+                  <th class="px-3 py-1.5 text-left">Status</th>
+                  <th class="px-3 py-1.5 text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in medicalData" :key="item.id"
+                    class="border-t cursor-pointer hover:bg-purple-200 transition"
+                    :class="darkMode ? 'border-purple-700 hover:bg-purple-700' : 'border-purple-200 hover:bg-purple-200'"
+                    @click="showMedicineInfo(item)">
+                  <td class="px-3 py-1.5">{{ item.patient }}</td>
+                  <td class="px-3 py-1.5">{{ item.age }}</td>
+                  <td class="px-3 py-1.5">{{ item.diagnosis }}</td>
+                  <td class="px-3 py-1.5">
+                    <span :class="item.status === 'Recovered'
+                      ? 'text-green-500 font-semibold'
+                      : item.status === 'Critical'
+                        ? 'text-red-500 font-semibold'
+                        : 'text-yellow-500 font-semibold'">
+                      {{ item.status }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-1.5">{{ item.date }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <!-- Medicine Stock Table -->
+        <section class="mb-6">
+          <h2 class="text-lg font-bold mb-3">Medicine Stock</h2>
+          <div class="overflow-x-auto">
+            <table class="min-w-full rounded-md shadow-md text-sm"
+                   :class="darkMode ? 'bg-gray-900 text-white' : 'bg-purple-50 text-purple-900'">
+              <thead>
+                <tr>
+                  <th class="px-3 py-1.5 text-left">Medicine</th>
+                  <th class="px-3 py-1.5 text-left">Type</th>
+                  <th class="px-3 py-1.5 text-left">Available</th>
+                  <th class="px-3 py-1.5 text-left">Min Limit</th>
+                  <th class="px-3 py-1.5 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="med in medicineStock" :key="med.id"
+                    class="border-t"
+                    :class="darkMode ? 'border-purple-700' : 'border-purple-200'">
+                  <td class="px-3 py-1.5">{{ med.name }}</td>
+                  <td class="px-3 py-1.5">{{ med.type }}</td>
+                  <td class="px-3 py-1.5">{{ med.available }}</td>
+                  <td class="px-3 py-1.5">{{ med.minLimit }}</td>
+                  <td class="px-3 py-1.5">
+                    <span :class="getStockStatusClass(med)">
+                      {{ getStockStatus(med) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Medicine Info Modal -->
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 transition">
+          <div class="bg-white dark:bg-purple-900 rounded-lg shadow-lg p-6 w-full max-w-md relative animate-fade-in">
+            <button class="absolute top-2 right-2 text-xl" @click="showModal = false">&times;</button>
+            <h3 class="text-lg font-bold mb-2">Medicine Info</h3>
+            <div v-if="selectedMedicine">
+              <div class="mb-2"><span class="font-semibold">Diagnosis:</span> {{ selectedMedicine.diagnosis }}</div>
+              <div class="mb-2"><span class="font-semibold">Uses:</span> {{ getMedicineUses(selectedMedicine.diagnosis) }}</div>
+              <div class="mb-2"><span class="font-semibold">Cures:</span> {{ getMedicineCures(selectedMedicine.diagnosis) }}</div>
+              <div class="mb-2"><span class="font-semibold">Variants:</span>
+                <span v-for="variant in getMedicineVariants(selectedMedicine.diagnosis)" :key="variant" class="inline-block bg-purple-200 text-purple-900 rounded px-2 py-0.5 mr-1 mb-1 text-xs">
+                  {{ variant }}
+                </span>
+              </div>
+              <div class="mb-2">
+                <canvas id="usageChart" height="120"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          darkMode: false,
+          sidebarOpen: false,
+          showModal: false,
+          selectedMedicine: null,
+          users: [
+            { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'Doctor' },
+            { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'Nurse' },
+            { id: 3, name: 'Charlie Lee', email: 'charlie@example.com', role: 'Admin' },
+            { id: 4, name: 'Diana Prince', email: 'diana@example.com', role: 'Receptionist' }
+          ],
+          recentPurchases: [
+            { id: 1, medicine: 'Paracetamol', qty: 50, cost: 250, date: '2025-05-19' },
+            { id: 2, medicine: 'Cough Syrup', qty: 10, cost: 400, date: '2025-05-18' },
+            { id: 3, medicine: 'Insulin', qty: 5, cost: 1500, date: '2025-05-17' }
+          ],
+          medicalData: [
+            { id: 1, patient: 'John Doe', age: 45, diagnosis: 'Diabetes', status: 'Stable', date: '2025-05-20' },
+            { id: 2, patient: 'Jane Roe', age: 32, diagnosis: 'Hypertension', status: 'Recovered', date: '2025-05-18' },
+            { id: 3, patient: 'Sam Green', age: 60, diagnosis: 'Asthma', status: 'Critical', date: '2025-05-17' },
+            { id: 4, patient: 'Lisa Brown', age: 28, diagnosis: 'Allergy', status: 'Stable', date: '2025-05-15' },
+            { id: 5, patient: 'Tom White', age: 50, diagnosis: 'Heart Disease', status: 'Recovered', date: '2025-05-10' }
+          ],
+          medicineStock: [
+            { id: 1, name: 'Paracetamol', type: 'Tablet', available: 120, minLimit: 50, variants: ['250mg', '500mg'] },
+            { id: 2, name: 'Cough Syrup', type: 'Syrup', available: 15, minLimit: 20, variants: ['100ml', '200ml'] },
+            { id: 3, name: 'Insulin', type: 'Injection', available: 0, minLimit: 10, variants: ['10IU', '40IU'] },
+            { id: 4, name: 'Vitamin D', type: 'Tablet', available: 60, minLimit: 30, variants: ['400IU', '1000IU'] },
+            { id: 5, name: 'Saline', type: 'Serum', available: 8, minLimit: 10, variants: ['500ml', '1000ml'] }
+          ],
+          medicineInfo: {
+            'Diabetes': {
+              uses: 'Controls blood sugar levels.',
+              cures: 'Helps manage diabetes.',
+              variants: ['Insulin 10IU', 'Insulin 40IU']
+            },
+            'Hypertension': {
+              uses: 'Lowers blood pressure.',
+              cures: 'Reduces risk of heart disease.',
+              variants: ['Tablet 25mg', 'Tablet 50mg']
+            },
+            'Asthma': {
+              uses: 'Relieves asthma symptoms.',
+              cures: 'Improves breathing.',
+              variants: ['Inhaler 100mcg', 'Tablet 4mg']
+            },
+            'Allergy': {
+              uses: 'Reduces allergic reactions.',
+              cures: 'Eases allergy symptoms.',
+              variants: ['Tablet 10mg', 'Syrup 5ml']
+            },
+            'Heart Disease': {
+              uses: 'Supports heart health.',
+              cures: 'Prevents heart attacks.',
+              variants: ['Tablet 75mg', 'Tablet 150mg']
+            }
+          }
+        }
+      },
+      methods: {
+        toggleTheme() {
+          this.darkMode = !this.darkMode;
+        },
+        getStockStatus(med) {
+          if (med.available === 0) return 'Out of Stock';
+          if (med.available <= med.minLimit) return 'Limited';
+          return 'In Stock';
+        },
+        getStockStatusClass(med) {
+          if (med.available === 0) return 'text-red-500 font-semibold';
+          if (med.available <= med.minLimit) return 'text-yellow-500 font-semibold';
+          return 'text-green-500 font-semibold';
+        },
+        showMedicineInfo(item) {
+          this.selectedMedicine = item;
+          this.showModal = true;
+          this.$nextTick(() => {
+            this.renderChart(item.diagnosis);
+          });
+        },
+        getMedicineUses(diagnosis) {
+          return this.medicineInfo[diagnosis]?.uses || 'N/A';
+        },
+        getMedicineCures(diagnosis) {
+          return this.medicineInfo[diagnosis]?.cures || 'N/A';
+        },
+        getMedicineVariants(diagnosis) {
+          return this.medicineInfo[diagnosis]?.variants || [];
+        },
+        renderChart(diagnosis) {
+          // Example usage data for chart
+          const usageData = {
+            'Diabetes': [10, 12, 8, 15, 9, 11, 13],
+            'Hypertension': [7, 8, 6, 9, 7, 8, 10],
+            'Asthma': [4, 5, 3, 6, 4, 5, 7],
+            'Allergy': [6, 7, 5, 8, 6, 7, 9],
+            'Heart Disease': [3, 4, 2, 5, 3, 4, 6]
+          };
+          const ctx = document.getElementById('usageChart').getContext('2d');
+          if (window.usageChartInstance) window.usageChartInstance.destroy();
+          window.usageChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [{
+                label: 'Usage',
+                data: usageData[diagnosis] || [0,0,0,0,0,0,0],
+                backgroundColor: '#a78bfa'
+              }]
+            },
+            options: {
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } }
+            }
+          });
+        }
+      }
+    }).mount('#app');
+  </script>
+  <style>
+    /* Smooth modal animation */
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(40px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .animate-fade-in {
+      animation: fade-in 0.3s ease;
+    }
+  </style>
+</body>
+</html>
